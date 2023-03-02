@@ -6,7 +6,7 @@
 /*   By: bgresse <bgresse@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 19:18:09 by bgresse           #+#    #+#             */
-/*   Updated: 2023/03/01 17:33:02 by bgresse          ###   ########.fr       */
+/*   Updated: 2023/03/02 15:52:21 by bgresse          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,83 +14,50 @@
 
 extern int	g_status;
 
-char	**ft_expand_path(t_env **head, char **cmds)
+
+char	*ft_expand_var(t_env **head, char *cmds)
 {
 	size_t	i;
+	char	*new_cmds;
+	bool 	dquote;
+	bool 	quote;
 
+	quote = false;
+	dquote = false;
 	i = 0;
+	new_cmds = ft_strdup("");
 	while (cmds[i])
 	{
-		if (cmds[i][0] == '~' && !cmds[i][1])
-		{
-			cmds[i] = ft_get_env(head, "HOME");
-			break ;
-		}
-		else if (cmds[i][0] == '~' && cmds[i][1] == '/')
-		{
-			cmds[i] = ft_strjoin(ft_get_env(head, "HOME"), cmds[i] + 1);
-			break ;
-		}
-		i++;
-	}
-	return (cmds);
-}
-
-static char	*ft_expand_string(t_env **head, char *string,
-	bool quote, bool dquote)
-{
-	size_t	i;
-	char	*new_string;
-
-	i = 0;
-	new_string = ft_strdup("");
-	while (string[i])
-	{
-		if (string[i] == '\'')
+		if (cmds[i] == '\'')
 			quote = !quote;
-		if (string[i] == '\"')
+		if (cmds[i] == '\"')
 			dquote = !dquote;
-		if (quote && !dquote && string[i + 1])
+		if (quote && !dquote && cmds[i + 1])
 		{
-			while (string[i] && string[i + 1] != '\'')
-				new_string = ft_strjoin_char(new_string, string[i++]);
-			quote = !quote;
+			while (cmds[i] && cmds[i + 1] != '\'')
+				new_cmds = ft_strjoin_char(new_cmds, cmds[i++]);
 		}
-		if (string[i] == '$' && (dquote || (!dquote && !quote))
-			&& string[i + 1] && ft_isalnum(string[i + 1]))
+		if (cmds[i] == '$' && (dquote || (!dquote && !quote))
+			&& cmds[i + 1] && ft_isalnum(cmds[i + 1]))
 		{
 			i++;
-			new_string = ft_strjoin(new_string,
-					ft_check_key(*head, string + i));
-			while (string[i + 1] && (ft_isalnum(string[i + 1])
-					|| string[i + 1] == '_'))
+			new_cmds = ft_strjoin(new_cmds,
+					ft_check_key(*head, cmds + i));
+			while (cmds[i + 1] && (ft_isalnum(cmds[i + 1])
+					|| cmds[i + 1] == '_'))
 				i++;
 		}
-		else if (string[i] == '$' && (dquote || (!dquote && !quote))
-			&& string[i + 1] == '?')
+		else if (cmds[i] == '$' && (dquote || (!dquote && !quote))
+			&& cmds[i + 1] == '?')
 		{
 			i++;
-			new_string = ft_strjoin(new_string, ft_itoa(g_status));
+			new_cmds = ft_strjoin(new_cmds, ft_itoa(g_status));
 		}
 		else
-			new_string = ft_strjoin_char(new_string, string[i]);
+			new_cmds = ft_strjoin_char(new_cmds, cmds[i]);
 		i++;
 	}
-	return (new_string);
-}
-
-char	**ft_expand_var(t_env **head, char **cmds)
-{
-	size_t	i;
-
-	i = 0;
-	while (cmds[i])
-	{
-		if (ft_strchr(cmds[i], '$'))
-			cmds[i] = ft_expand_string(head, cmds[i], false, false);
-		i++;
-	}
-	return (cmds);
+	return (new_cmds);
 }
 
 char	**ft_remove_quotes(char **cmds)
